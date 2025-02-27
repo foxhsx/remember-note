@@ -1,0 +1,5 @@
+.milkdown .editor {
+    padding: 1rem;
+    outline: none;
+    min-height: calc(100vh - 40px);
+}

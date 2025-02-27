@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  note:
+    build:
+      context: ..
+      dockerfile: docker/note.Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/server.Dockerfile
+    ports:
+      - "3333:3333"
+    env_file:
+      - ../.env
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/notes
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  mongodb:
+    image: mongo:4.4.13
+    volumes:
+      - ./data/mongodb:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

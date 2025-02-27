@@ -1,0 +1,58 @@
+{
+  "name": "note-server",
+  "version": "1.0.0",
+  "description": "the server for note and blog",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "npx nodemon --exec node --loader ts-node/esm ./index.ts",
+    "lint": "npx eslint . --ext .ts ",
+    "fix": "npx eslint . --fix",
+    "pcheck": "npx prettier --check .",
+    "prettier": "npx prettier --write .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "schedule": "npx nodemon --exec node --import ./utils/register-ts-node.js ./utils/schedule.ts"
+  },
+  "author": "cecil",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/multer": "^3.0.2",
+    "ali-oss": "^6.17.1",
+    "axios": "^1.4.0",
+    "dotenv": "^16.4.7",
+    "jsonwebtoken": "^8.5.1",
+    "koa": "^2.13.4",
+    "koa-body": "^5.0.0",
+    "koa-router": "^11.0.1",
+    "koa-static": "^5.0.0",
+    "koa2-cors": "^2.0.6",
+    "mongoose": "^5.13.3",
+    "node-fetch": "^3.3.2",
+    "node-schedule": "^2.1.0",
+    "shelljs": "^0.8.5",
+    "tinify": "^1.7.1",
+    "ts-node": "^10.8.2",
+    "typescript": "^5.1.6",
+    "utility": "^1.17.0"
+  },
+  "devDependencies": {
+    "@types/ali-oss": "^6.16.4",
+    "@types/jsonwebtoken": "^8.5.8",
+    "@types/koa": "^2.13.4",
+    "@types/koa-router": "^7.4.4",
+    "@types/koa-static": "^4.0.2",
+    "@types/koa2-cors": "^2.0.2",
+    "@types/node": "^18.0.1",
+    "@types/node-schedule": "^2.1.0",
+    "@types/shelljs": "^0.8.11",
+    "@typescript-eslint/eslint-plugin": "^5.31.0",
+    "@typescript-eslint/parser": "^5.31.0",
+    "eslint": "^8.20.0",
+    "lint-staged": "^13.0.3",
+    "prettier": "2.7.1",
+    "simple-git": "^3.19.1"
+  },
+  "lint-staged": {
+    "*.ts": "npx eslint . --ext .ts"
+  }
+}

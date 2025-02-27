@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom"],
+    "allowSyntheticDefaultImports": true
+  },
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

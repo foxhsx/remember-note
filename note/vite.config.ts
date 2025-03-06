@@ -9,6 +9,7 @@ import IconsResolver from 'unplugin-icons/resolver'
 import { fileURLToPath } from 'url'
 
 export default defineConfig({
+  envDir: '../',
   plugins: [
     vue(),
     AutoImport({

@@ -66,7 +66,7 @@ const rules = {
 const handleAvatarChange = async (file: UploadFile) => {
   try {
     const url = await uploadAvatar(userStore.id, file.raw!)
-    form.avatar = `${import.meta.env.VITE_BASE_URL}${url}`;
+    form.avatar = `${process.env.NODE_ENV === 'development' ? import.meta.env.VITE_BASE_URL : ''}${url}`;
     ElMessage.success('头像上传成功')
   } catch (error) {
     console.error('上传头像失败:', error)

@@ -125,12 +125,14 @@ const gitShell = async (commit: string, isRelease: boolean): Promise<Error | nul
 }
 
 export async function releaseBlog(params: TParams, isRelease: boolean) {
+  const date = new Date(params.update_time);
+  const formattedDate = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
   const template = `---
 title: ${params.title}
-date: ${params.update_time}
+date: ${formattedDate}
 tags: [${params.tags}]
 draft: false
-summary: ${params.summary}
+description: ${params.summary}
 ---
 
 ${params.content}

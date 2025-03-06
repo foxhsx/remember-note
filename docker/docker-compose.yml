@@ -2,14 +2,20 @@ version: '3.8'
 
 services:
   note:
-    image: registry.cn-chengdu.aliyuncs.com/cecil-he/remember-note:v0.1.0
+    # image: registry.cn-chengdu.aliyuncs.com/cecil-he/remember-note:v0.1.0
+    build:
+      context: ..
+      dockerfile: docker/note.Dockerfile
     ports:
       - "8080:80"
     depends_on:
       - server
 
   server:
-    image: registry.cn-chengdu.aliyuncs.com/cecil-he/remember-server:v0.1.0
+    # image: registry.cn-chengdu.aliyuncs.com/cecil-he/remember-server:v0.1.0
+    build:
+      context: ..
+      dockerfile: docker/server.Dockerfile
     ports:
       - "3333:3333"
     env_file:

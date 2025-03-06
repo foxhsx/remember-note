@@ -149,7 +149,7 @@ const handleLogin = async () => {
         if (res.data.code === 1) {
           userStore.setUserInfo({
             name: res.data.name,
-            avatar: res.data.avatar ? `${import.meta.env.VITE_BASE_URL}${res.data.avatar}` : '/remember.png',
+            avatar: res.data.avatar ? `${process.env.NODE_ENV === 'development' ? import.meta.env.VITE_BASE_URL : ''}${res.data.avatar}` : '/remember.png',
             token: res.data.token,
             id: res.data.id,
             hobby: res.data.hobby

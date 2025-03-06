@@ -649,16 +649,16 @@ noteRouter.post('/upload', tokenUtils.verifyToken, async (ctx) => {
   try {
     const file = Object.assign(ctx.request.files?.['file[]'] || {})
     if (Object.keys(file).length) {
-      // 使用 import.meta.url 获取当前文件的绝对路径，然后构建 public 目录路径
       const __dirname = path.dirname(new URL(import.meta.url).pathname);
       const publicDir = path.join(__dirname, '../public');
       const fileName = new Date().getTime();
       const assetFile = `${publicDir}/imgs/${fileName}.webp`;
       const stream = fs.readFileSync(file.filepath)
-      // 没有 imgs 文件夹就自动创建一个
+      
       if (!fs.existsSync(`${publicDir}/imgs/`)) {
         fs.mkdirSync(`${publicDir}/imgs/`, { recursive: true });
       }
+
       try {
         const tinifyStream = await tinifyImg(stream);
         if (Buffer.isBuffer(tinifyStream)) {

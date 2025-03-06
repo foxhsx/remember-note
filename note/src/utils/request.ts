@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const request = axios.create({
-    baseURL: import.meta.env.VITE_BASE_URL,
-    timeout: 5000
+    baseURL: process.env.NODE_ENV === 'development' ? import.meta.env.VITE_BASE_URL : '/api',
+    timeout: 30000
 })
 
 // 请求拦截器

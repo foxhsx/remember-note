@@ -106,7 +106,7 @@ onMounted(() => {
           try {
             const { data } = await upload(formData)
             if (data.code === 1) {
-              const imageUrl = `${import.meta.env.VITE_BASE_URL}${data.data.url}`
+              const imageUrl = `${process.env.NODE_ENV === 'development' ? import.meta.env.VITE_BASE_URL : ''}${data.data.url}`
               const insertImgText = `![${data.data.fileName}](${imageUrl})`
               // 主要靠这句插入图片
               vditor.value?.insertValue(insertImgText)

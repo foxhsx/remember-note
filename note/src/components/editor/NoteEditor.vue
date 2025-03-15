@@ -40,7 +40,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handlePublish">确认</el-button>
+          <el-button type="primary" :loading="publishing" @click="handlePublish">确认</el-button>
         </span>
       </template>
     </el-dialog>
@@ -256,12 +256,16 @@ const handleDelete = () => {
   })
 }
 
+// 添加发布状态变量
+const publishing = ref(false)
+
 // TODO 需要测试
 const handlePublish = async () => {
   const articleId = route.params.id as string
   if (!articleId) return
 
   try {
+    publishing.value = true // 开始发布，设置 loading 状态
     const result = await request.put(`/note/updateArticle/${articleId}`, {
       title: title.value,
       content: content.value,
@@ -278,6 +282,8 @@ const handlePublish = async () => {
     dialogVisible.value = false
   } catch (error) {
     ElMessage.error('发布失败')
+  } finally {
+    publishing.value = false // 无论成功失败，都结束 loading 状态
   }
 }
 </script>
@@ -418,10 +424,46 @@ const handlePublish = async () => {
   align-items: center;
   justify-content: space-between;
 
-  .summary-input {
+  .title-actions {
+    display: flex;
+    gap: 8px;
+
+    .affine-style-btn {
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border: none;
+      padding: 6px 12px;
+    
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    
+      &.publish-btn {
+        background-color: #3370ff;
+        
+        &:hover {
+          background-color: #1e5eff;
+        }
+      }
+    
+      &.delete-btn {
+        background-color: #eb4d4d;
+        
+        &:hover {
+          background-color: #e63939;
+        }
+      }
+    }
+  }
+}
+
+.summary-input {
     display: flex;
     gap: 12px;
     margin-top: 4px;
+    width: 100%;
   
     .el-input {
       flex: 1;
@@ -474,39 +516,4 @@ const handlePublish = async () => {
       }
     }
   }
-
-  .title-actions {
-    display: flex;
-    gap: 8px;
-
-    .affine-style-btn {
-      border-radius: 8px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      border: none;
-      padding: 6px 12px;
-    
-      &:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-    
-      &.publish-btn {
-        background-color: #3370ff;
-        
-        &:hover {
-          background-color: #1e5eff;
-        }
-      }
-    
-      &.delete-btn {
-        background-color: #eb4d4d;
-        
-        &:hover {
-          background-color: #e63939;
-        }
-      }
-    }
-  }
-}
 </style>

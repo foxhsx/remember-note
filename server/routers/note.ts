@@ -21,7 +21,7 @@ dotenv.config({
 // AI 配置
 const AI_CONFIG = {
   API_KEY: process.env.OPENAI_API_KEY || '',
-  BASE_URL: process.env.OPENAI_BASE_URL || 'https://api.siliconflow.cn/v1',
+  BASE_URL: process.env.OPENAI_BASE_URL || 'https://api.siliconflow.cn',
   MODEL: process.env.OPENAI_MODEL || 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
 }
 

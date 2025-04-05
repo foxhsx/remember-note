@@ -125,13 +125,14 @@ const gitShell = async (commit: string, isRelease: boolean): Promise<Error | nul
 }
 
 export async function releaseBlog(params: TParams, isRelease: boolean) {
-  const date = new Date(params.update_time);
-  const formattedDate = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
-  
-  // 提取并处理文章中的图片
-  const { content: processedContent, imageUrls } = await extractAndProcessImages(params.content);
-  
-  const template = `---
+  try {
+    const date = new Date(params.update_time);
+    const formattedDate = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    
+    // 提取并处理文章中的图片
+    const { content: processedContent, imageUrls } = await extractAndProcessImages(params.content);
+    
+    const template = `---
 title: ${params.title}
 date: ${formattedDate}
 tags: [${params.tags}]
@@ -142,84 +143,83 @@ description: ${params.summary}
 ${processedContent}
 `
 
-  const repoUrl = process.env.GITHUB_REPO_URL;
-  const repoName = process.env.GITHUB_REPO_NAME;
-  const repoContentPath = process.env.GITHUB_REPO_CONTENT_PATH;
+    const repoUrl = process.env.GITHUB_REPO_URL;
+    const repoName = process.env.GITHUB_REPO_NAME;
+    const repoContentPath = process.env.GITHUB_REPO_CONTENT_PATH;
 
-  if (!repoUrl) {
-    return Promise.reject('请在环境变量中配置 Github 仓库地址 GITHUB_REPO_URL 参数');
-  }
-  if (!repoName) {
-    return Promise.reject('请在环境变量中配置仓库名称 GITHUB_REPO_NAME 参数');
-  }
-  if (!repoContentPath) {
-    return Promise.reject('请在环境变量中配置博客文章路径 GITHUB_REPO_CONTENT_PATH 参数');
-  }
+    if (!repoUrl) {
+      return Promise.reject('请在环境变量中配置 Github 仓库地址 GITHUB_REPO_URL 参数');
+    }
+    if (!repoName) {
+      return Promise.reject('请在环境变量中配置仓库名称 GITHUB_REPO_NAME 参数');
+    }
+    if (!repoContentPath) {
+      return Promise.reject('请在环境变量中配置博客文章路径 GITHUB_REPO_CONTENT_PATH 参数');
+    }
 
-  // 进入到根目录
-  process.chdir("../");
-  const rootDir = process.cwd();
-  const repoPath = path.join(rootDir, repoName);
+    // 进入到根目录
+    process.chdir("../");
+    const rootDir = process.cwd();
+    const repoPath = path.join(rootDir, repoName);
 
-  // 检查仓库是否存在，不存在则克隆
-  if (!fs.existsSync(repoPath)) {
-    console.log(`Cloning repository ${repoName}...`);
-    const cloneStatus = await shell.exec(`git clone ${repoUrl}`);
-    const cloneError = getGitError(cloneStatus);
-    if (cloneError) return Promise.reject(cloneError);
-  }
+    // 检查仓库是否存在，不存在则克隆
+    if (!fs.existsSync(repoPath)) {
+      console.log(`Cloning repository ${repoName}...`);
+      const cloneStatus = await shell.exec(`git clone ${repoUrl}`);
+      const cloneError = getGitError(cloneStatus);
+      if (cloneError) return Promise.reject(cloneError);
+    }
 
-  // 进入仓库目录
-  process.chdir(repoPath);
+    // 进入仓库目录
+    process.chdir(repoPath);
 
-  // 更新仓库到最新状态
-  const pullStatus = await shell.exec('git pull');
-  const pullError = getGitError(pullStatus);
-  if (pullError) return Promise.reject(pullError);
+    // 更新仓库到最新状态
+    const pullStatus = await shell.exec('git pull');
+    const pullError = getGitError(pullStatus);
+    if (pullError) return Promise.reject(pullError);
 
-  // 确保博客目录存在
-  const blogDirectory = path.join(repoPath, repoContentPath || 'content/post/');
-  if (!fs.existsSync(blogDirectory)) {
-    fs.mkdirSync(blogDirectory, { recursive: true });
-  }
+    // 使用 promises 版本的 fs 操作，确保异步操作的顺序性
+    // 确保博客目录存在
+    const blogDirectory = path.join(repoPath, repoContentPath || 'content/post/');
+    if (!fs.existsSync(blogDirectory)) {
+      await fs.promises.mkdir(blogDirectory, { recursive: true });
+    }
 
-  // 创建以文章标题命名的文件夹
-  const articleFolder = path.join(blogDirectory, sanitizeFileName(params.title));
-  if (!fs.existsSync(articleFolder)) {
-    fs.mkdirSync(articleFolder, { recursive: true });
-  }
+    // 创建以文章标题命名的文件夹
+    const articleFolder = path.join(blogDirectory, sanitizeFileName(params.title));
+    if (!fs.existsSync(articleFolder)) {
+      await fs.promises.mkdir(articleFolder, { recursive: true });
+    }
 
-  // 如果有图片，创建 assets 目录
-  const assetsFolder = path.join(articleFolder, 'assets');
-  if (imageUrls.length > 0 && !fs.existsSync(assetsFolder)) {
-    fs.mkdirSync(assetsFolder, { recursive: true });
-  }
-
-  // 下载图片到 assets 目录
-  if (imageUrls.length > 0) {
-    await downloadImages(imageUrls, assetsFolder);
-  }
-
-  // 指定输出文件名为 index.md
-  const outputPath = path.join(articleFolder, 'index.md');
-
-  // 生成 md 文件
-  return new Promise((resolve, reject) => {
-    fs.writeFile(outputPath, template, async (err) => {
-      if (err) {
-        console.error('Failed to generate MD file:', err);
-        reject(err);
-        return;
+    // 如果有图片，创建 assets 目录并下载图片
+    if (imageUrls.length > 0) {
+      const assetsFolder = path.join(articleFolder, 'assets');
+      if (!fs.existsSync(assetsFolder)) {
+        await fs.promises.mkdir(assetsFolder, { recursive: true });
       }
-      console.log('MD file generated successfully!');
-      const gitError = await gitShell(`更新 ${params.title}`, isRelease);
-      if (gitError) {
-        reject(gitError);
-        return;
-      }
-      resolve(null);
-    });
-  });
+      
+      // 确保目录创建成功后再下载图片
+      await downloadImages(imageUrls, assetsFolder);
+    }
+
+    // 指定输出文件名为 index.md
+    const outputPath = path.join(articleFolder, 'index.md');
+
+    // 使用 promises 版本的 fs.writeFile
+    await fs.promises.writeFile(outputPath, template);
+    console.log('MD file generated successfully!');
+    
+    // 执行 git 操作
+    const gitError = await gitShell(`更新 ${params.title}`, isRelease);
+    if (gitError) {
+      return Promise.reject(gitError);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('发布博客失败:', error);
+    return Promise.reject(error);
+  }
 }
 
 // 提取并处理文章中的图片
@@ -258,36 +258,47 @@ async function extractAndProcessImages(content: string): Promise<{ content: stri
 
 // 下载图片到指定目录
 async function downloadImages(imageUrls: Array<{url: string, filename: string}>, assetsFolder: string): Promise<void> {
-  const downloadPromises = imageUrls.map(async ({ url, filename }) => {
-    try {
-      // 处理相对路径的图片 URL
-      let fullUrl = url;
-      if (url.startsWith('/')) {
-        // 假设这是相对于网站根目录的路径，需要添加域名
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        fullUrl = `${baseUrl}${url}`;
-      } else if (!url.startsWith('http')) {
-        // 如果不是绝对路径也不是以 http 开头，可能是相对路径
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        fullUrl = `${baseUrl}/${url}`;
-      }
-      
-      const response = await fetch(fullUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to download image: ${fullUrl}`);
-      }
-      
-      const buffer = await response.arrayBuffer();
-      const outputPath = path.join(assetsFolder, filename);
-      
-      await fs.promises.writeFile(outputPath, Buffer.from(buffer));
-      console.log(`Downloaded image: ${filename}`);
-    } catch (error) {
-      console.error(`Error downloading image ${url}:`, error);
+  try {
+    // 确保 assets 目录存在
+    if (!fs.existsSync(assetsFolder)) {
+      await fs.promises.mkdir(assetsFolder, { recursive: true });
     }
-  });
-  
-  await Promise.all(downloadPromises);
+    
+    const downloadPromises = imageUrls.map(async ({ url, filename }) => {
+      try {
+        // 处理相对路径的图片 URL
+        let fullUrl = url;
+        if (url.startsWith('/')) {
+          // 假设这是相对于网站根目录的路径，需要添加域名
+          const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+          fullUrl = `${baseUrl}${url}`;
+        } else if (!url.startsWith('http')) {
+          // 如果不是绝对路径也不是以 http 开头，可能是相对路径
+          const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+          fullUrl = `${baseUrl}/${url}`;
+        }
+        
+        const response = await fetch(fullUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${fullUrl}`);
+        }
+        
+        const buffer = await response.arrayBuffer();
+        const outputPath = path.join(assetsFolder, filename);
+        
+        await fs.promises.writeFile(outputPath, Buffer.from(buffer));
+        console.log(`Downloaded image: ${filename}`);
+      } catch (error) {
+        console.error(`Error downloading image ${url}:`, error);
+        // 不抛出错误，继续处理其他图片
+      }
+    });
+    
+    await Promise.all(downloadPromises);
+  } catch (error) {
+    console.error('下载图片过程中出错:', error);
+    throw error; // 重新抛出错误，让调用者知道出了问题
+  }
 }
 
 // 清理文件名，移除不合法字符
@@ -299,39 +310,42 @@ function sanitizeFileName(filename: string): string {
     .trim();
 }
 
-export const cancelBlog = (articleId: string, title: string, isRelease: boolean) => {
-  // 加载环境变量
-  dotenv.config();
-  const repoName = process.env.GITHUB_REPO_NAME;
-  const repoContentPath = process.env.GITHUB_REPO_CONTENT_PATH;
-  
-  if (!repoName) {
-    return Promise.reject('请在环境变量中配置仓库名称 GITHUB_REPO_NAME 参数');
-  }
-  if (!repoContentPath) {
-    return Promise.reject('请在环境变量中配置博客文章路径 GITHUB_REPO_CONTENT_PATH 参数');
-  }
+export const cancelBlog = async (articleId: string, title: string, isRelease: boolean) => {
+  try {
+    // 加载环境变量
+    dotenv.config();
+    const repoName = process.env.GITHUB_REPO_NAME;
+    const repoContentPath = process.env.GITHUB_REPO_CONTENT_PATH;
+    
+    if (!repoName) {
+      return Promise.reject('请在环境变量中配置仓库名称 GITHUB_REPO_NAME 参数');
+    }
+    if (!repoContentPath) {
+      return Promise.reject('请在环境变量中配置博客文章路径 GITHUB_REPO_CONTENT_PATH 参数');
+    }
 
-  // 指定文章目录
-  const rootDir = path.resolve(__dirname, '../..');
-  const blogDirectory = path.join(rootDir, repoName, repoContentPath || 'content/post/');
-  const articleFolder = path.join(blogDirectory, sanitizeFileName(title));
+    // 指定文章目录
+    const rootDir = path.resolve(__dirname, '../..');
+    const blogDirectory = path.join(rootDir, repoName, repoContentPath || 'content/post/');
+    const articleFolder = path.join(blogDirectory, sanitizeFileName(title));
 
-  return new Promise((resolve, reject) => {
-    // 递归删除整个文章目录
-    fs.rm(articleFolder, { recursive: true, force: true }, async (err) => {
-      if (err) {
-        console.error('删除文章目录失败:', err);
-        reject(err);
-        return;
-      }
+    // 检查目录是否存在
+    if (fs.existsSync(articleFolder)) {
+      // 使用 promises 版本的 fs.rm
+      await fs.promises.rm(articleFolder, { recursive: true, force: true });
       console.log('文章目录已成功删除');
-      const gitError = await gitShell(`删除 ${title}`, isRelease);
-      if (gitError) {
-        reject(gitError);
-        return;
-      }
-      resolve(null);
-    });
-  });
+    } else {
+      console.log('文章目录不存在，无需删除');
+    }
+    
+    const gitError = await gitShell(`删除 ${title}`, isRelease);
+    if (gitError) {
+      return Promise.reject(gitError);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('取消博客发布失败:', error);
+    return Promise.reject(error);
+  }
 }
